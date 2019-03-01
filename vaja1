@@ -1,0 +1,90 @@
+#include <iostream>
+
+#include <cv.h>
+#include <highgui.h>
+#include <opencv2/opencv.hpp>
+
+// deklaracije funkcij, definiranih v datoteki funkcije.cpp
+int dolociPrag(cv::Mat frame);
+std::vector<double> izracunajHistogram(cv::Mat frame);
+cv::Mat narisiHistogram(std::vector<double> histogram);
+
+int main(int argc, char** argv)
+{
+    // inicializacija kamere
+/*    cv::VideoCapture capture(0);                          <-----------
+
+    // preverimo, če je zajem slike uspesen
+	if (argc == 1 && (capture.isOpened() == false))
+	{
+		std::cerr << "Ne morem inicializairati kamere ..." << std::endl;
+		return -1;
+	}
+*/                                                       // <-----------
+    // inicializacija oken za prikaz barvne slike, sive slike in histograma
+    cv::namedWindow("originalna_slika", CV_WINDOW_NORMAL);
+    cv::resizeWindow("originalna_slika", 640, 480);
+    cv::namedWindow("siva_slika", CV_WINDOW_NORMAL);
+    cv::resizeWindow("siva_slika", 640, 480);
+    cv::namedWindow("histogram_sive_slike");
+    cv::resizeWindow("histogram_sive_slike", 512, 512);
+    
+    // inicializacija podatkovnih struktur za slike in histogram
+    cv::Mat origImage;
+    cv::Mat grayImage;
+    cv::Mat histogramImage;
+	cv::Mat obdelanaSlika;
+	  
+    std::vector<double> histogram;
+	for (int keyCode = -1 ; keyCode < 0 ; )
+	{
+        //Nalozimo sliko iz podane datoteke ali zajamemo iz kamere
+		if (argc > 1) {
+			origImage = cv::imread(argv[1]);
+//        } else {                                     
+//			capture >> origImage;                      
+        }		
+		if (origImage.empty())
+		{
+            std::cerr << "Ne uspem pridobiti slike ..." << std::endl;
+			break;
+		}
+
+        cv::cvtColor(origImage, grayImage, CV_BGR2GRAY);
+		
+		//Na tem mestu izvedemo izbrano metodo obdelave sive slike, npr.		
+		//cv::medianBlur(grayImage, grayImage, 15);
+
+        cv::imshow("originalna_slika", origImage);  
+        cv::imshow("siva_slika", grayImage);	
+
+
+        // izracun in prikaz histograma
+        histogram = izracunajHistogram(grayImage);
+        histogramImage = narisiHistogram(histogram);
+
+        cv::imshow("histogram_sive_slike", histogramImage);
+
+        // izracun praga
+        int prag = dolociPrag(grayImage);//Klic funkcije									
+        std::cout << prag << std::endl;
+		cv::threshold(grayImage,obdelanaSlika,prag,255, cv::THRESH_BINARY); // obdelamo sliko tako, da pridobimo bi-level sliko.
+
+        //TODO: uporabite izracunan prag za upragovljanje slike
+        //      in upragovljeno sliko prikazite v novem oknu,
+        //      *poleg* barvne in sive slike
+		cv::imshow("Obdelana slika", obdelanaSlika);
+		
+		if (argc > 1)		
+			keyCode = cv::waitKey() % 256;
+		else		
+			keyCode = cv::waitKey(10) % 256;
+	}
+
+    // po izhodu iz glavne zanke zapremo vsa okna
+    cv::destroyWindow("originalna_slika");
+    cv::destroyWindow("siva_slika");
+    cv::destroyWindow("histogram_sive_slike");
+
+	return 0;
+}
